@@ -13,6 +13,8 @@ fn main() {
             calculus::put(function_table.clone());
         }else if input.trim()=="caculate"{
             calculus::caculate(function_table.clone());
+        }else if input.trim()=="derivative"{
+            calculus::derivative(function_table.clone());
         }else if input.trim()=="stop"{
             break;
         }else{

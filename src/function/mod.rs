@@ -1,16 +1,14 @@
 use std::collections::HashMap;
 
 use crate::expr::{Expr, Token};
+pub mod caculate;
+pub mod derivative;
 pub mod implement;
 pub mod parse;
-pub mod caculate;
-//pub mod derivative;
 
 #[derive(Clone, PartialEq)]
 pub struct Function {
-    symble: Expr,
-    root: Expr,
-    
+    pub(crate) symble: Expr,
     body: Expr,
 
     tokens: Vec<Token>,

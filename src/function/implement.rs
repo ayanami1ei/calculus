@@ -26,7 +26,7 @@ impl Function {
 
     pub(super) fn is(&mut self, token: Token) -> Result<bool, anyhow::Error> {
         if self.i >= self.tokens.len() {
-            return Ok(false)
+            return Ok(false);
         }
 
         if self.tokens[self.i] == token {
@@ -35,14 +35,6 @@ impl Function {
         } else {
             Ok(false)
         }
-    }
-
-    fn generate_body(&mut self) -> Result<Expr, anyhow::Error> {
-        let res: Expr = Expr::Const(0.0);
-
-        self.expect(Token::Operator('='))?;
-
-        Ok(res)
     }
 
     fn generate_name(&mut self) -> Result<(), anyhow::Error> {
@@ -68,8 +60,9 @@ impl Function {
             }
         }
 
-        #[cfg(debug_assertions)]{
-            println!("args.len()={}",args.len());
+        #[cfg(debug_assertions)]
+        {
+            println!("args.len()={}", args.len());
         }
 
         if let Expr::Func(name, _) = &self.symble {
@@ -87,11 +80,9 @@ impl Function {
     ) -> Result<Function, anyhow::Error> {
         let name = tokens[0].as_identifier()?;
         let args = Vec::<Expr>::new();
-        let root = Expr::Const(0.0);
 
         let mut res = Function {
             symble: Expr::Func(name.clone(), args),
-            root,
             body: Expr::Const(0.0),
 
             tokens: tokens.to_vec(),
@@ -99,9 +90,13 @@ impl Function {
         };
 
         res.generate_name()?;
-        res.root = res.generate_body()?;
-        let mut _binding=function_table.clone();
-        let mut binding=_binding.borrow_mut();
+        res.i+=1;
+        // 目前 generate_body 只处理 '='，主体表达式由 parse_add_or_sub 给出
+        let body = res.parse_add_or_sub(function_table.clone())?;
+        res.body = body.simplify();
+
+        let mut _binding = function_table.clone();
+        let mut binding = _binding.borrow_mut();
 
         match binding.check_duplicate(&res) {
             Ok(true) => {
@@ -109,8 +104,7 @@ impl Function {
             }
             Ok(false) => {
                 // 没有同名同参的函数，可以安全插入
-                binding
-                    .insert(name.clone(), res.clone());
+                binding.insert(name.clone(), res.clone());
             }
             Err(e) => {
                 // 存在同名同参但表达式不同，视为冲突
@@ -118,16 +112,13 @@ impl Function {
             }
         }
 
-        res.body = res.parse_add_or_sub(function_table)?;
-
         Ok(res)
     }
 
     pub(super) fn new_with_expr(body: Expr) -> Function {
         Function {
             symble: Expr::Func("".to_string(), Vec::new()),
-            root: Expr::Const(0.0),
-            body,
+            body: body.simplify(),
 
             tokens: Vec::new(),
             i: 0,
@@ -162,7 +153,8 @@ impl FunctionTable {
             if let Some(existing) = self.map.get(name) {
                 if let Expr::Func(_, exist_args) = &existing.symble {
                     if exist_args.len() == args.len() {
-                        if existing.root == func.root {
+                        // 同名同参且表达式体完全相同，视为重复定义
+                        if existing.body == func.body {
                             return Ok(true);
                         } else {
                             return Err(anyhow::Error::msg(
@@ -179,8 +171,8 @@ impl FunctionTable {
     }
 }
 
-impl std::fmt::Display for Function{
+impl std::fmt::Display for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,"{}={}",self.symble,self.body)
+        write!(f, "{}={}", self.symble, self.body)
     }
 }

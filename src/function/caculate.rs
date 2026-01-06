@@ -143,8 +143,8 @@ impl Function {
                 );
             }
 
-            Ok(l.caculate(arg, function_table.clone())?
-                .log(r.caculate(arg, function_table.clone())?))
+            Ok(r.caculate(arg, function_table.clone())?
+                .log(l.caculate(arg, function_table.clone())?))
         } else if let Expr::Trifuncs(ref name, pvar) = pos {
             let mut var_func=Function::new_with_expr(*pvar);
             var_func.symble = Expr::Func("".to_string(), orig_args.clone());
